@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Custom Color Heatmap</title>
+  <title>Heatmap with Icons</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -30,6 +30,17 @@
       border: 2px solid #fff;
       overflow: hidden;
     }
+    /* アイコン用 */
+    .node img {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
     .node-label {
       font-size: 1rem;
       fill: #333;
@@ -50,16 +61,28 @@
   <div id="chart"></div>
 
   <script>
-    // ──────────────── カスタム色をデータに持たせる例 ────────────────
+    // ─── アイコン URL をデータに追加 ───
     const data = {
       name: "portfolio",
       children: [
-        { name: "AAPL", value: 30, color: "#A2D5F2" },
-         { name: "BRK", value: 30, color: "#A2D5F2" },
-         { name: "HIMS", value: 30, color: "#A2D5F2" },
-         { name: "DNUT", value: 30, color: "#A2D5F2" },
-        { name: "NVDA", value: 60, color: "#76B900" },
-        { name: "SBUX", value: 20, color: "#00704A" }
+        {
+          name: "AAPL",
+          value: 30,
+          color: "#A2D5F2",
+          icon: "https://example.com/icons/apple.png"
+        },
+        {
+          name: "NVDA",
+          value: 60,
+          color: "#76B900",
+          icon: "https://example.com/icons/nvidia.png"
+        },
+        {
+          name: "SBUX",
+          value: 20,
+          color: "#00704A",
+          icon: "https://example.com/icons/starbucks.png"
+        }
       ]
     };
 
@@ -67,6 +90,7 @@
 
     function draw() {
       container.selectAll(".node").remove();
+
       const width  = container.node().clientWidth;
       const height = container.node().clientHeight;
 
@@ -88,21 +112,10 @@
           .style("top",   d => d.y0 + "px")
           .style("width", d => (d.x1 - d.x0) + "px")
           .style("height",d => (d.y1 - d.y0) + "px")
-          // ここでデータに持たせた色を使う
-          .style("background", d => d.data.color);
+          .style("background", d => d.data.color)
+          .style("position", "absolute");
 
-      nodes.append("svg")
-        .attr("width",  d => d.x1 - d.x0)
-        .attr("height", d => d.y1 - d.y0)
-        .append("text")
-          .attr("class", "node-label")
-          .attr("x", 6)
-          .attr("y", 20)
-          .text(d => `${d.data.name}: ${d.data.value}%`);
-    }
-
-    draw();
-    window.addEventListener("resize", draw);
-  </script>
-</body>
-</html>
+      // アイコンを追加
+      nodes.append("img")
+        .attr("src", d => d.data.icon)
+        .attr("alt", d => d.data.name + " icon")
