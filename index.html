@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Portfolio Heatmap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Responsive Portfolio Heatmap</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -11,29 +12,42 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       background: #f0f0f0;
     }
+    /* ベース：横長レイアウト */
     #chart {
-      width: 800px;
-      height: 400px;
+      width: 90vw;           /* 画面幅の90% */
+      height: 50vh;          /* ビューポート高さの50% */
+      max-width: 800px;
+      max-height: 400px;
+      position: relative;
       background: white;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .node {
       position: absolute;
       box-sizing: border-box;
-      overflow: hidden;
       border: 2px solid #fff;
-      cursor: pointer;
-    }
-    .node:hover {
-      opacity: 0.8;
+      overflow: hidden;
     }
     .node-label {
-      font-size: 16px;
+      font-size: 1rem;
       fill: #333;
       pointer-events: none;
+    }
+
+    /* スマホ縦長レイアウト */
+    @media (max-width: 600px) {
+      #chart {
+        width: 95vw;
+        height: 80vh;       /* 縦長に */
+        max-width: none;
+        max-height: none;
+      }
+      .node-label {
+        font-size: 1.2rem;
+      }
     }
   </style>
 </head>
@@ -41,71 +55,67 @@
   <div id="chart"></div>
 
   <script>
-    // データ定義
     const data = {
       name: "portfolio",
       children: [
         { name: "AAPL", value: 30 },
-         { name: "nke", value: 130 },
-         { name: "ulta", value: 30 },
-         { name: "smr", value: 30 },
-        { name: "NVDA", value: 160 },
-         { name: "AAPL2", value: 30 },
-         { name: "nke2", value: 30 },
-         { name: "ulta2", value: 30 },
-         { name: "smr2", value: 30 },
-        { name: "NVDA2", value: 60 },
-         { name: "AAPL3", value: 30 },
-         { name: "nke3", value: 30 },
-         { name: "ulta3", value: 30 },
-         { name: "smr3", value: 30 },
-        { name: "NVDA3", value: 60 },
-        { name: "SBUX3", value: 20 }
+        { name: "NVDA", value: 60 },
+        { name: "SBUX", value: 20 }
       ]
     };
 
-    const width = 800;
-    const height = 400;
-
-    // カラースケール（保有割合が大きいほど濃い青）
     const color = d3.scaleSequential()
       .domain([0, d3.max(data.children, d => d.value)])
       .interpolator(d3.interpolateBlues);
 
-    // ツリーマップレイアウト
-    const root = d3.hierarchy(data)
-      .sum(d => d.value)
-      .sort((a, b) => b.value - a.value);
+    const container = d3.select("#chart");
 
-    d3.treemap()
-      .size([width, height])
-      .paddingInner(2)
-      (root);
+    // 描画関数
+    function draw() {
+      // まずクリア
+      container.selectAll(".node").remove();
 
-    // SVG ではなく、HTML 要素で配置
-    const container = d3.select("#chart")
-      .style("position", "relative");
+      // container の実ピクセルサイズを取得
+      const width  = container.node().clientWidth;
+      const height = container.node().clientHeight;
 
-    const nodes = container.selectAll(".node")
-      .data(root.leaves())
-      .enter()
-      .append("div")
-        .attr("class", "node")
-        .style("left", d => d.x0 + "px")
-        .style("top", d => d.y0 + "px")
-        .style("width", d => d.x1 - d.x0 + "px")
-        .style("height", d => d.y1 - d.y0 + "px")
-        .style("background", d => color(d.value));
+      // ツリーマップレイアウト
+      const root = d3.hierarchy(data)
+        .sum(d => d.value)
+        .sort((a, b) => b.value - a.value);
 
-    // ラベル
-    nodes.append("svg")
-      .attr("width", d => d.x1 - d.x0)
-      .attr("height", d => d.y1 - d.y0)
-      .append("text")
-        .attr("class", "node-label")
-        .attr("x", 6)
-        .attr("y", 20)
-        .text(d => `${d.data.name}: ${d.data.value}%`);
+      d3.treemap()
+        .size([width, height])
+        .paddingInner(2)
+        (root);
+
+      // 各セルの描画
+      const nodes = container.selectAll(".node")
+        .data(root.leaves())
+        .enter()
+        .append("div")
+          .attr("class", "node")
+          .style("left", d => d.x0 + "px")
+          .style("top", d => d.y0 + "px")
+          .style("width", d => (d.x1 - d.x0) + "px")
+          .style("height", d => (d.y1 - d.y0) + "px")
+          .style("background", d => color(d.value));
+
+      // ラベルをSVGテキストで描画（フォントサイズ自動調整可）
+      nodes.append("svg")
+        .attr("width", d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0)
+        .append("text")
+          .attr("class", "node-label")
+          .attr("x", 6)
+          .attr("y", 20)
+          .text(d => `${d.data.name}: ${d.data.value}%`);
+    }
+
+    // 初回描画
+    draw();
+    // 画面がリサイズされるたび再描画
+    window.addEventListener("resize", draw);
   </script>
 </body>
 </html>
