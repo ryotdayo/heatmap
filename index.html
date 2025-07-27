@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Responsive Portfolio Heatmap</title>
+  <title>Custom Color Heatmap</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -15,10 +15,9 @@
       min-height: 100vh;
       background: #f0f0f0;
     }
-    /* ベース：横長レイアウト */
     #chart {
-      width: 90vw;           /* 画面幅の90% */
-      height: 50vh;          /* ビューポート高さの50% */
+      width: 90vw;
+      height: 50vh;
       max-width: 800px;
       max-height: 400px;
       position: relative;
@@ -36,14 +35,10 @@
       fill: #333;
       pointer-events: none;
     }
-
-    /* スマホ縦長レイアウト */
     @media (max-width: 600px) {
       #chart {
         width: 95vw;
-        height: 80vh;       /* 縦長に */
-        max-width: none;
-        max-height: none;
+        height: 80vh;
       }
       .node-label {
         font-size: 1.2rem;
@@ -55,35 +50,26 @@
   <div id="chart"></div>
 
   <script>
+    // ──────────────── カスタム色をデータに持たせる例 ────────────────
     const data = {
       name: "portfolio",
       children: [
-        { name: "AAPL", value: 30 },
-        { name: "NVDA", value: 260 },
-        { name: "AAPL", value: 30 },
-        { name: "NVDA", value: 60 },
-        { name: "AAPL", value: 10 },
-        { name: "NVDA", value: 60 },
-        { name: "SBUX", value: 20 }
+        { name: "AAPL", value: 30, color: "#A2D5F2" },
+         { name: "BRK", value: 30, color: "#A2D5F2" },
+         { name: "HIMS", value: 30, color: "#A2D5F2" },
+         { name: "DNUT", value: 30, color: "#A2D5F2" },
+        { name: "NVDA", value: 60, color: "#76B900" },
+        { name: "SBUX", value: 20, color: "#00704A" }
       ]
     };
 
-    const color = d3.scaleSequential()
-      .domain([0, d3.max(data.children, d => d.value)])
-      .interpolator(d3.interpolateBlues);
-
     const container = d3.select("#chart");
 
-    // 描画関数
     function draw() {
-      // まずクリア
       container.selectAll(".node").remove();
-
-      // container の実ピクセルサイズを取得
       const width  = container.node().clientWidth;
       const height = container.node().clientHeight;
 
-      // ツリーマップレイアウト
       const root = d3.hierarchy(data)
         .sum(d => d.value)
         .sort((a, b) => b.value - a.value);
@@ -93,21 +79,20 @@
         .paddingInner(2)
         (root);
 
-      // 各セルの描画
       const nodes = container.selectAll(".node")
         .data(root.leaves())
         .enter()
         .append("div")
           .attr("class", "node")
-          .style("left", d => d.x0 + "px")
-          .style("top", d => d.y0 + "px")
+          .style("left",  d => d.x0 + "px")
+          .style("top",   d => d.y0 + "px")
           .style("width", d => (d.x1 - d.x0) + "px")
-          .style("height", d => (d.y1 - d.y0) + "px")
-          .style("background", d => color(d.value));
+          .style("height",d => (d.y1 - d.y0) + "px")
+          // ここでデータに持たせた色を使う
+          .style("background", d => d.data.color);
 
-      // ラベルをSVGテキストで描画（フォントサイズ自動調整可）
       nodes.append("svg")
-        .attr("width", d => d.x1 - d.x0)
+        .attr("width",  d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
         .append("text")
           .attr("class", "node-label")
@@ -116,9 +101,7 @@
           .text(d => `${d.data.name}: ${d.data.value}%`);
     }
 
-    // 初回描画
     draw();
-    // 画面がリサイズされるたび再描画
     window.addEventListener("resize", draw);
   </script>
 </body>
