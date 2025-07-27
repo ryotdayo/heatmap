@@ -118,4 +118,21 @@
       // アイコンを追加
       nodes.append("img")
         .attr("src", d => d.data.icon)
-        .attr("alt", d => d.data.name + " icon")
+        .attr("alt", d => d.data.name + " icon");
+
+      // テキストラベル
+      nodes.append("svg")
+        .attr("width",  d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0)
+        .append("text")
+          .attr("class", "node-label")
+          .attr("x", 6)
+          .attr("y", 48)         // アイコン下にずらす
+          .text(d => `${d.data.name}: ${d.data.value}%`);
+    }
+
+    draw();
+    window.addEventListener("resize", draw);
+  </script>
+</body>
+</html>
